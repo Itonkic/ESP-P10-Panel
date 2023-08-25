@@ -24,3 +24,7 @@ There is a PDF called drawning with sketch for creating PCB
 ![PCB1](https://user-images.githubusercontent.com/28485210/212488415-e7e574da-ca52-43b8-ad65-3af49cb8ca2a.jpg)
 ![PCB2](https://user-images.githubusercontent.com/28485210/212488419-1acabbf8-7939-4c61-a27b-08ad741140f3.jpg)
 
+Creating pcb with CNC
+
+![](https://github.com/Itonkic/ESP-P10-Panel/blob/main/cnc.gif)
+
