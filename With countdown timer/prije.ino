@@ -10,7 +10,7 @@ String dayStamp;
 String monthStamp;
 String rtc;
 const int sirenaq = 1;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 7200);
+NTPClient timeClient(ntpUDP, "hr.pool.ntp.org", 0);
 ESP8266WebServer server(80);
 unsigned long currentMilliss;
 DHT dht(DHTPIN, DHTTYPE);
@@ -24,13 +24,13 @@ int ass;
   unsigned long previousMilliss = 0;
 unsigned long intervall = 600000;
 int h;
+
+
 String formattedDate;
 unsigned long starttime;
 unsigned long endtime;
-const char* ssid = "";
 int zapiss;
 String oneLLine;
-const char* password = "";
 unsigned long previousMillis = 0;
 unsigned long interval = 1000;
 bool wm_nonblocking = false; // change to true to use non blocking
@@ -40,6 +40,11 @@ String sa[3];
 String temp[3];
 String smj[5];
   String oneLine ;
+const char* ssid = "SDFZetelice";
+const char* password = "AgroZupanja2020";
+
+//const char* ssid = "ProSoft";
+//const char* password = "pswifi44.";
 
 int vrijeme[30];
 CountDown CD;
@@ -75,45 +80,23 @@ void vremena(String flash) {
   return;
 }
 
-/*
-void Flash_Text(String flash) {
-  delay(500);
-  String oneLine = flash;
-  int str_len = flash.length() + 1;
-  char char_array[str_len];
-  Incoming_Text.toCharArray(char_array, str_len);
-  strcpy(Text[0], char_array);
-  int r = 0, t = 0;
-  for (int i = 0; i < oneLine.length(); i++)
-  {
-    if (oneLine.charAt(i) == '_')
-    {
-      q[t] = oneLine.substring(r, i).toInt();
-      r = (i + 1);
-      t++;
-    }
-  }
-  int sat = sa[1].toInt();
-  int minu = sa[2].toInt();
-  int sec = sa[3].toInt();
-  CD.start(0, sa[1].toInt(), sa[2].toInt(), sa[3].toInt());
-  fdata = sa[1] + "_" + sa[2] + "_" + sa[3];
-  return;
-}
-*/
 void sirena2(){
     starttime = millis();
     endtime = starttime;
     Disp.bris();
     Disp.setFont(Droid_Sans_16);
+	while (Serial.available()) {
+	  Serial.read();
+	}
     digitalWrite(sirenat, HIGH);
+	
     while ((endtime - starttime) <=((String(vrijeme[29]).toInt())*1000)) // do this loop for up to 1000mS
       {
-        Disp.drawText(0, 1, rtc);
-        Disp.loop();
         endtime = millis();
+        Serial.println("");
       }
       digitalWrite(sirenat, LOW); 
+      Serial.println("takt");
   }
 
 
@@ -123,17 +106,18 @@ void sirena1(){
     endtime = starttime;
     Serial.println("endtime");
     Disp.bris();
-    Serial.println("disp.bris");
     Disp.setFont(Droid_Sans_16);
-    Serial.println("SetFont");
+	while (Serial.available()) {
+	  Serial.read();
+	}
     digitalWrite(sirenap, HIGH);
     Serial.println("Digitral write high");
     while ((endtime - starttime) <=((String(vrijeme[29]).toInt())*1000)) // do this loop for up to 1000mS
       {
-        Disp.drawText(0, 1, rtc);
-        Disp.loop();
         endtime = millis();
+        Serial.println("");
       }
+      Serial.println("pauza");
       Serial.println("Digitral write LOW PRIJE");
       digitalWrite(sirenap, LOW);
       Serial.println("Digitral write LOW POSLJE");
@@ -248,11 +232,12 @@ void setup() {
   digitalWrite(sirenat, LOW);
   digitalWrite(sirenaq, LOW);
   digitalWrite(sirenap, LOW);
+  
   h=0;
   ass=1;
   zapiss=0;
   temp[1]="0";
-temp[2]="0";
+  temp[2]="0";
   //deleteData();
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
@@ -300,7 +285,7 @@ temp[2]="0";
     timeClient.setTimeOffset(3600);
     timeClient.forceUpdate();
     }
-    else if(monthStamp.toInt()==3 && dayStamp.toInt()<=26){
+    else if(monthStamp.toInt()==3 && dayStamp.toInt()<26){
     timeClient.setTimeOffset(3600);
     timeClient.forceUpdate();
     }
@@ -308,6 +293,10 @@ temp[2]="0";
     timeClient.setTimeOffset(3600);
     timeClient.forceUpdate();
     }
+  }
+  if((monthStamp.toInt()<10 && monthStamp.toInt()>=4)||(monthStamp.toInt()==3 && dayStamp.toInt()>=26)){
+    timeClient.setTimeOffset(7200);
+    timeClient.forceUpdate();
   }
     //----------------------------------------DMDESP Setup
     Disp.start(); //--> Run the DMDESP library
@@ -324,6 +313,7 @@ temp[2]="0";
     server.on("/setText", handle_Incoming_Text);  //--> Routine to handle handle_Incoming_Text Subroutines
     server.begin(); //--> Start server
     Serial.println("HTTP server started");
+    WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
       delay(500);
       Serial.print('.');
@@ -339,12 +329,37 @@ temp[2]="0";
      // CD.start(0, 1, 2, 1);
 
   }
+    ArduinoOTA.onStart([]() {
+    Serial.println("Start");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+  CD.start(0, 1, 0,0);
 }
 
 void loop() {
-              //  Serial.println("takt");
+                Serial.println("takt");
+              Serial.println(String(timeClient.getHours())+":"+String(timeClient.getMinutes()));
+             
               //Serial.println(CD.remaining());
-   Serial.println(CD.remaining());
+                ArduinoOTA.handle();
+   //Serial.println(CD.remaining());
     if ( pocetak==0){
       pocetak=1;
     //readData(0);
@@ -368,10 +383,10 @@ if(timeClient.getMinutes()==55||timeClient.getMinutes()==45||timeClient.getMinut
       sec = (CD.remaining() % 60);
  //   writeData("0_"+String(hr)+"_"+String(miin)+"_"+String(sec)+"_",0);
     }
-  }
+  }/*
  if(timeClient.getSeconds()==1||timeClient.getSeconds()==5||timeClient.getSeconds()==11||timeClient.getSeconds()==15||timeClient.getSeconds()==21||timeClient.getSeconds()==25||timeClient.getSeconds()==31||timeClient.getSeconds()==35||timeClient.getSeconds()==41||timeClient.getSeconds()==45||timeClient.getSeconds()==51||timeClient.getSeconds()==55){
   Disp.bris();
-  }
+  }*/
   //sirena takta
 if(CD.remaining()==300){
   sirena2();
@@ -479,7 +494,7 @@ if(timeClient.getDay()!=0 || timeClient.getDay()!=6){
           }
 }
 }
-  Disp.loop(); //--> Run "Disp.loop" to refresh the LED
+ // Disp.loop(); //--> Run "Disp.loop" to refresh the LED
 
   if (wm_nonblocking) wm.process(); // avoid delays() in loop when non-blocking and other long running code
   wm.process();
@@ -557,7 +572,7 @@ if(timeClient.getDay()!=0 || timeClient.getDay()!=6){
  // Serial.println(rtc);
  // Arial14
    Disp.setFont(Droid20);
-
+ Disp.loop();
  // Disp.setFont(Droid_Sans_16);
   Disp.drawText(0, 1, rtc);
  // Disp.drawText(0, 1, "SADFSDFSDF");
@@ -601,7 +616,10 @@ if(timeClient.getDay()!=0 || timeClient.getDay()!=6){
          Disp.drawText(128, 43, asd);   
 }
 //========================================================================
-
+void updateDisplay(){
+  Disp.clear();
+  
+  }
 
 void handle_Incoming_Text() {
   Incoming_Text = server.arg("TextContents");
